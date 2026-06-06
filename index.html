@@ -1878,6 +1878,8 @@ function loadFloorPlan(input){
     floorNaturalAspect = this.naturalWidth / this.naturalHeight;
     floorBaseW = areaW;
     const finalH = Math.max(Math.round(areaW / floorNaturalAspect), 150);
+    inner.style.minWidth  = '0';
+    inner.style.minHeight = '0';
     inner.style.width  = areaW + 'px';
     inner.style.height = finalH + 'px';
     // 슬라이더 100% 초기화
@@ -2267,6 +2269,7 @@ function clearLayout(){
   document.getElementById('canvas-hint').style.display='';
   const inner=document.getElementById('canvas-inner');
   inner.style.width=''; inner.style.height='';
+  inner.style.minWidth=''; inner.style.minHeight='';
   clearEraseCanvas();
   updateLayoutStats();
   hist=[]; histIdx=-1;
