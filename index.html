@@ -1860,23 +1860,27 @@ function armLib(el, type){
   else ca.classList.add('placing');
 }
 
+let floorNaturalAspect = 1; // 원본 이미지 가로/세로 비율 저장
+
 function loadFloorPlan(input){
   const file = input.files[0];
   if(!file) return;
+  // 같은 파일 재업로드 가능하도록 input 초기화
+  input.value = '';
   const url = URL.createObjectURL(file);
   const img = document.getElementById('floor-bg');
   img.onload = function(){
     const area = document.getElementById('canvas-area');
     const inner = document.getElementById('canvas-inner');
     const areaW = area.clientWidth || 800;
-    const ratio = this.naturalHeight / this.naturalWidth;
-    const h = Math.round(areaW * ratio);
+    // 원본 비율 저장
+    floorNaturalAspect = this.naturalWidth / this.naturalHeight;
     const finalW = areaW;
-    const finalH = Math.max(h, 400);
+    const finalH = Math.round(finalW / floorNaturalAspect);
     inner.style.width  = finalW + 'px';
-    inner.style.height = finalH + 'px';
+    inner.style.height = Math.max(finalH, 150) + 'px';
     const badge = document.getElementById('floor-size-badge');
-    if(badge) badge.textContent = `${finalW} × ${finalH}`;
+    if(badge) badge.textContent = `${finalW} × ${Math.max(finalH, 150)}`;
   };
   img.src = url;
   img.style.display = 'block';
@@ -1893,21 +1897,17 @@ function loadFloorPlan(input){
   toast('도면이 로드되었습니다');
 }
 
-// ── 도면 리사이즈 (비율 고정) ──
+// ── 도면 리사이즈 (원본 비율 고정) ──
 let floorResizeState = null;
 function startFloorResize(e){
   e.preventDefault();
   e.stopPropagation();
   const inner = document.getElementById('canvas-inner');
   const touch = e.touches ? e.touches[0] : e;
-  const w = inner.offsetWidth;
-  const h = inner.offsetHeight;
   floorResizeState = {
     startX: touch.clientX,
-    startY: touch.clientY,
-    startW: w,
-    startH: h,
-    aspect: w / h,
+    startW: inner.offsetWidth,
+    aspect: floorNaturalAspect, // 원본 이미지 비율 사용
   };
   document.addEventListener('mousemove', onFloorResizeMove);
   document.addEventListener('mouseup',   onFloorResizeEnd);
@@ -1919,14 +1919,13 @@ function onFloorResizeMove(e){
   if(e.cancelable) e.preventDefault();
   const touch = e.touches ? e.touches[0] : e;
   const dx = touch.clientX - floorResizeState.startX;
-  // 가로 변화량 기준으로 비율 고정
   const newW = Math.max(200, floorResizeState.startW + dx);
-  const newH = Math.round(newW / floorResizeState.aspect);
+  const newH = Math.max(150, Math.round(newW / floorResizeState.aspect));
   const inner = document.getElementById('canvas-inner');
   inner.style.width  = newW + 'px';
-  inner.style.height = Math.max(150, newH) + 'px';
+  inner.style.height = newH + 'px';
   const badge = document.getElementById('floor-size-badge');
-  if(badge) badge.textContent = `${Math.round(newW)} × ${Math.max(150, newH)}`;
+  if(badge) badge.textContent = `${Math.round(newW)} × ${newH}`;
 }
 function onFloorResizeEnd(){
   if(!floorResizeState) return;
