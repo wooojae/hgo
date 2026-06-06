@@ -219,7 +219,7 @@ tbody tr:hover td{background:#FAFAFA}
 .ctx-item.danger:hover{background:#FFF5F5}
 
 /* ── ADMIN ── */
-.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
 .stat-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--bdr);padding:18px}
 .stat-ico{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px}
 .stat-lbl{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:5px}
@@ -230,6 +230,23 @@ tbody tr:hover td{background:#FAFAFA}
 .bar{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .5s}
 .bar-lbl{font-size:10px;color:var(--t2);text-align:center}
 .bar-n{font-size:10px;font-weight:600;color:var(--t1)}
+.atab-bar{display:flex;border-bottom:2px solid var(--bdr);margin-bottom:18px;gap:0}
+.atab{padding:10px 20px;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
+.atab.on{color:var(--p);border-bottom-color:var(--p)}
+.atab:hover:not(.on){color:var(--t1);background:var(--bg)}
+.atab-panel{display:none}
+.atab-panel.on{display:block}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--bdr)}
+.flt-inp{border:1px solid var(--bdr);border-radius:7px;padding:6px 10px;font-size:12px;font-family:inherit;background:var(--white);flex:1;min-width:150px;outline:none}
+.flt-inp:focus{border-color:var(--p)}
+.flt-sel{border:1px solid var(--bdr);border-radius:7px;padding:6px 10px;font-size:12px;font-family:inherit;background:var(--white);cursor:pointer;outline:none}
+.status-sel{border:1px solid transparent;border-radius:5px;padding:3px 7px;font-size:11px;font-family:inherit;font-weight:600;cursor:pointer;outline:none}
+.s-검토중{background:#FEF3C7;color:#B45309;border-color:#FCD34D}
+.s-검토완료{background:#D1FAE5;color:#065F46;border-color:#6EE7B7}
+.s-보류{background:#FEE2E2;color:#B91C1C;border-color:#FCA5A5}
+.adm-del{border:none;background:none;color:var(--t3);cursor:pointer;font-size:14px;padding:3px 5px;border-radius:4px;line-height:1}
+.adm-del:hover{color:#EF4444;background:#FEE2E2}
+.adm-empty{text-align:center;color:var(--t2);font-size:13px;padding:32px}
 
 /* ── MODAL ── */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
@@ -637,30 +654,106 @@ tbody tr:hover td{background:#FAFAFA}
       <div class="pg-header">
         <div>
           <div class="pg-h1">관리자 대시보드</div>
-          <div class="pg-sub">전국 총무 운영 현황 · 실시간 집계</div>
+          <div class="pg-sub">전국 총무 운영 현황 · 데이터 관리</div>
         </div>
-        <button class="btn btn-o btn-sm" onclick="refreshAdmin()">🔄 새로고침</button>
-      </div>
-      <div class="admin-stats" id="admin-stats"></div>
-      <div class="two-col" style="margin-bottom:14px">
-        <div class="card">
-          <div class="card-h"><span class="card-ttl">자주 묻는 질문 TOP5</span></div>
-          <div class="card-b" id="admin-faq"></div>
-        </div>
-        <div class="card">
-          <div class="card-h"><span class="card-ttl">유형별 보수 요청 현황</span></div>
-          <div class="card-b" id="admin-chart"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-o btn-sm" onclick="exportFacCSV()">📥 CSV 내보내기</button>
+          <button class="btn btn-o btn-sm" onclick="refreshAdmin()">🔄 새로고침</button>
         </div>
       </div>
-      <div class="card">
-        <div class="card-h"><span class="card-ttl">최근 시설보수 요청 리스트</span></div>
-        <div style="overflow-x:auto">
-          <table id="admin-table">
-            <thead><tr>
-              <th>번호</th><th>지점</th><th>요청자</th><th>유형</th><th>금액</th><th>AI 검토</th><th>상태</th><th>일자</th>
-            </tr></thead>
-            <tbody id="admin-tbody"></tbody>
-          </table>
+
+      <!-- 탭 -->
+      <div class="atab-bar">
+        <div class="atab on" data-tab="dash" onclick="switchAdminTab('dash')">📊 대시보드</div>
+        <div class="atab" data-tab="fac"  onclick="switchAdminTab('fac')">🔧 시설보수 관리</div>
+        <div class="atab" data-tab="qa"   onclick="switchAdminTab('qa')">💬 문의 관리</div>
+      </div>
+
+      <!-- ① 대시보드 탭 -->
+      <div class="atab-panel on" id="atab-dash">
+        <div class="admin-stats" id="admin-stats"></div>
+        <div class="two-col" style="margin-bottom:14px">
+          <div class="card">
+            <div class="card-h"><span class="card-ttl">자주 묻는 질문 TOP 5</span></div>
+            <div class="card-b" id="admin-faq"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><span class="card-ttl">유형별 보수 요청 현황</span></div>
+            <div class="card-b" id="admin-chart"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">
+            <span class="card-ttl">최근 시설보수 요청</span>
+            <button class="btn btn-sm btn-o" onclick="switchAdminTab('fac')" style="font-size:11px">전체 관리 →</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="admin-table">
+              <thead><tr>
+                <th>번호</th><th>일자</th><th>조직</th><th>요청자</th><th>유형</th><th>금액</th><th>결재라인</th><th>상태</th>
+              </tr></thead>
+              <tbody id="admin-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 시설보수 관리 탭 -->
+      <div class="atab-panel" id="atab-fac">
+        <div class="card" style="padding:0">
+          <div class="card-h" style="padding:12px 14px">
+            <span class="card-ttl">시설보수 요청 전체 목록</span>
+            <span id="fac-adm-count" style="font-size:12px;color:var(--t2);font-weight:400"></span>
+          </div>
+          <div class="filter-bar">
+            <input class="flt-inp" id="fac-srch" placeholder="🔍 조직·요청자·내용 검색" oninput="renderFacAdmin()">
+            <select class="flt-sel" id="fac-f-status" onchange="renderFacAdmin()">
+              <option value="">전체 상태</option>
+              <option value="검토중">검토중</option>
+              <option value="검토완료">검토완료</option>
+              <option value="보류">보류</option>
+            </select>
+            <select class="flt-sel" id="fac-f-type" onchange="renderFacAdmin()">
+              <option value="">전체 유형</option>
+              <option>냉난방 장비</option><option>전기/조명</option><option>배관/수도</option>
+              <option>소방/안전</option><option>인테리어/도장</option><option>가구/비품</option><option>기타</option>
+            </select>
+            <button class="btn btn-o btn-sm" onclick="clearFacFilter()">초기화</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="fac-adm-table">
+              <thead><tr>
+                <th>번호</th><th>일자</th><th>조직</th><th>요청자</th><th>유형</th><th>내용</th><th>금액</th><th>공사업체</th><th>결재</th><th>상태</th><th>관리</th>
+              </tr></thead>
+              <tbody id="fac-adm-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 문의 관리 탭 -->
+      <div class="atab-panel" id="atab-qa">
+        <div class="card" style="padding:0">
+          <div class="card-h" style="padding:12px 14px">
+            <span class="card-ttl">총무문의 AI 내역</span>
+            <span id="qa-adm-count" style="font-size:12px;color:var(--t2);font-weight:400"></span>
+          </div>
+          <div class="filter-bar">
+            <input class="flt-inp" id="qa-srch" placeholder="🔍 질문 내용 검색" oninput="renderQAAdmin()">
+            <select class="flt-sel" id="qa-f-cat" onchange="renderQAAdmin()">
+              <option value="">전체 카테고리</option>
+              <option>시설보수</option><option>공사</option><option>품의서</option><option>기타</option>
+            </select>
+            <button class="btn btn-sm" style="background:#FEE2E2;color:#B91C1C;border:1px solid #FCA5A5;border-radius:7px;font-size:12px;padding:6px 12px;cursor:pointer" onclick="clearAllQA()">전체 삭제</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="qa-adm-table">
+              <thead><tr>
+                <th>번호</th><th>카테고리</th><th>질문 내용</th><th>조회</th><th>일시</th><th>관리</th>
+              </tr></thead>
+              <tbody id="qa-adm-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -1926,55 +2019,60 @@ function saveLayout(){
 // ═══════════════════════════════════
 //  ADMIN DASHBOARD
 // ═══════════════════════════════════
-function refreshAdmin(){
-  const qa = loadQA();
-  const fac = loadFac();
-  const done = fac.filter(f=>f.status==='검토완료').length;
-  const total = fac.reduce((s,f)=>s+(f.amount||0),0);
-  const avg = fac.length ? Math.round(total/fac.length/10000) : 0;
-  const nowM = new Date().toLocaleDateString('ko-KR').slice(0,8);
-  const monthly = fac.filter(f=>(f.date||'').slice(0,8)===nowM).length;
+function switchAdminTab(tab){
+  document.querySelectorAll('.atab').forEach(el=>el.classList.toggle('on', el.dataset.tab===tab));
+  document.querySelectorAll('.atab-panel').forEach(el=>el.classList.remove('on'));
+  document.getElementById('atab-'+tab).classList.add('on');
+  if(tab==='dash') refreshAdmin();
+  if(tab==='fac')  renderFacAdmin();
+  if(tab==='qa')   renderQAAdmin();
+}
 
-  // Stats
-  const statsData=[
+function refreshAdmin(){
+  const qa=loadQA(), fac=loadFac();
+  const done=fac.filter(f=>f.status==='검토완료').length;
+  const pending=fac.filter(f=>f.status==='검토중').length;
+  const hold=fac.filter(f=>f.status==='보류').length;
+  const total=fac.reduce((s,f)=>s+(f.amount||0),0);
+  const avg=fac.length?Math.round(total/fac.length/10000):0;
+  const nowM=new Date().toLocaleDateString('ko-KR').slice(0,8);
+  const monthly=fac.filter(f=>(f.date||'').slice(0,8)===nowM).length;
+
+  document.getElementById('admin-stats').innerHTML=[
     {ico:'💬',bg:'var(--pl)',lbl:'총 문의 건수',val:qa.length,sub:'AI 자동 처리'},
     {ico:'🔧',bg:'#EFF6FF',lbl:'시설보수 요청',val:fac.length,sub:'전체 접수 건'},
     {ico:'✅',bg:'#ECFDF5',lbl:'검토 완료',val:done,sub:`완료율 ${fac.length?Math.round(done/fac.length*100):0}%`},
-    {ico:'📅',bg:'#FFFBEB',lbl:'이달 접수',val:monthly,sub:'당월 요청 건수'},
-    {ico:'💰',bg:'#F5F3FF',lbl:'총 예상 비용',val:fac.length?'₩'+Math.round(total/10000)+'만':'-',sub:'견적 합산'},
-    {ico:'📊',bg:'#F0FDF4',lbl:'평균 견적액',val:avg?'₩'+avg+'만':'-',sub:'건당 평균'},
-  ];
-  document.getElementById('admin-stats').innerHTML=statsData.map(s=>`
-    <div class="stat-card">
-      <div class="stat-ico" style="background:${s.bg}">${s.ico}</div>
-      <div class="stat-lbl">${s.lbl}</div>
-      <div class="stat-val">${s.val}</div>
-      <div class="stat-sub">${s.sub}</div>
-    </div>
-  `).join('');
+    {ico:'⏳',bg:'#FFFBEB',lbl:'검토중',val:pending,sub:'처리 대기'},
+    {ico:'⏸',bg:'#FEE2E2',lbl:'보류',val:hold,sub:'재검토 필요'},
+    {ico:'📅',bg:'#F0FDF4',lbl:'이달 접수',val:monthly,sub:'당월 요청 건수'},
+    {ico:'💰',bg:'#F5F3FF',lbl:'총 견적 합산',val:fac.length?'₩'+Math.round(total/10000)+'만':'-',sub:'전체 누계'},
+    {ico:'📊',bg:'#FFF7ED',lbl:'평균 견적액',val:avg?'₩'+avg+'만':'-',sub:'건당 평균'},
+  ].map(s=>`<div class="stat-card">
+    <div class="stat-ico" style="background:${s.bg}">${s.ico}</div>
+    <div class="stat-lbl">${s.lbl}</div>
+    <div class="stat-val">${s.val}</div>
+    <div class="stat-sub">${s.sub}</div>
+  </div>`).join('');
 
   // FAQ TOP5
-  const sorted=[...qa].sort((a,b)=>(b.cnt||1)-(a.cnt||1)).slice(0,5);
   const faqEl=document.getElementById('admin-faq');
-  if(!sorted.length){ faqEl.innerHTML='<div style="color:var(--t2);font-size:13px;text-align:center;padding:20px">문의 데이터가 없습니다</div>'; }
-  else {
-    faqEl.innerHTML=sorted.map((q,i)=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)">
-        <div style="width:20px;height:20px;background:${i<3?'var(--p)':'var(--bg)'};color:${i<3?'#fff':'var(--t2)'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</div>
-        <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.q}</div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span class="badge b-gr">${q.cat}</span>
-          <span class="badge b-o">×${q.cnt||1}</span>
-        </div>
+  const sorted=[...qa].sort((a,b)=>(b.cnt||1)-(a.cnt||1)).slice(0,5);
+  if(!sorted.length){ faqEl.innerHTML='<div class="adm-empty">문의 데이터가 없습니다</div>'; }
+  else faqEl.innerHTML=sorted.map((q,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)">
+      <div style="width:20px;height:20px;background:${i<3?'var(--p)':'var(--bg)'};color:${i<3?'#fff':'var(--t2)'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.q}</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span class="badge b-gr">${q.cat}</span>
+        <span class="badge b-o">×${q.cnt||1}</span>
       </div>
-    `).join('');
-  }
+    </div>`).join('');
 
   // 유형별 차트
   const typeCount={};
   fac.forEach(f=>{ typeCount[f.type]=(typeCount[f.type]||0)+1; });
   const chartEl=document.getElementById('admin-chart');
-  if(!Object.keys(typeCount).length){ chartEl.innerHTML='<div style="color:var(--t2);font-size:13px;text-align:center;padding:20px">보수 요청 데이터가 없습니다</div>'; }
+  if(!Object.keys(typeCount).length){ chartEl.innerHTML='<div class="adm-empty">보수 요청 데이터가 없습니다</div>'; }
   else {
     const maxV=Math.max(...Object.values(typeCount));
     chartEl.innerHTML=`<div class="chart-bars">${Object.entries(typeCount).map(([k,v])=>`
@@ -1982,25 +2080,137 @@ function refreshAdmin(){
         <div class="bar-n">${v}</div>
         <div class="bar" style="height:${Math.round(v/maxV*90)}%;background:var(--p)"></div>
         <div class="bar-lbl">${k.replace(/\/.*$/,'').slice(0,4)}</div>
-      </div>
-    `).join('')}</div>`;
+      </div>`).join('')}</div>`;
   }
 
-  // 테이블
+  // 최근 5건 미리보기
   const tbody=document.getElementById('admin-tbody');
-  if(!fac.length){ tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--t2)">데이터가 없습니다</td></tr>'; return; }
-  tbody.innerHTML=fac.slice(0,10).map((f,i)=>`
+  if(!fac.length){ tbody.innerHTML='<tr><td colspan="8" class="adm-empty">데이터가 없습니다</td></tr>'; return; }
+  tbody.innerHTML=[...fac].reverse().slice(0,5).map((f,i)=>`
     <tr>
       <td>#${String(fac.length-i).padStart(4,'0')}</td>
+      <td>${f.date}</td>
       <td>${f.region}</td>
       <td>${f.requester}</td>
       <td><span class="badge b-gr">${f.type}</span></td>
       <td style="font-weight:600">${(f.amount||0).toLocaleString()}원</td>
-      <td><span class="badge b-gr" style="font-size:11px">${f.approvalLine||'지점장 전결'}</span></td>
-      <td><span class="badge b-g">${f.status}</span></td>
-      <td style="color:var(--t2)">${f.date}</td>
-    </tr>
-  `).join('');
+      <td style="font-size:11px">${f.approvalLine||'지점장 전결'}</td>
+      <td><span class="badge ${f.status==='검토완료'?'b-g':f.status==='보류'?'b-r':'b-o'}">${f.status}</span></td>
+    </tr>`).join('');
+}
+
+function renderFacAdmin(){
+  const fac=loadFac();
+  const srch=(document.getElementById('fac-srch')?.value||'').toLowerCase();
+  const fSt=document.getElementById('fac-f-status')?.value||'';
+  const fTy=document.getElementById('fac-f-type')?.value||'';
+  const filtered=[...fac].reverse().filter(f=>{
+    if(fSt && f.status!==fSt) return false;
+    if(fTy && f.type!==fTy) return false;
+    if(srch){
+      const hay=`${f.region} ${f.requester} ${f.detail} ${f.type}`.toLowerCase();
+      if(!hay.includes(srch)) return false;
+    }
+    return true;
+  });
+  const cntEl=document.getElementById('fac-adm-count');
+  if(cntEl) cntEl.textContent=`총 ${filtered.length}건 / 전체 ${fac.length}건`;
+  const tbody=document.getElementById('fac-adm-tbody');
+  if(!filtered.length){ tbody.innerHTML=`<tr><td colspan="11" class="adm-empty">조건에 맞는 데이터가 없습니다</td></tr>`; return; }
+  tbody.innerHTML=filtered.map((f,i)=>`
+    <tr>
+      <td style="color:var(--t2)">#${String(filtered.length-i).padStart(4,'0')}</td>
+      <td style="white-space:nowrap">${f.date}</td>
+      <td style="white-space:nowrap">${f.region}</td>
+      <td>${f.requester}</td>
+      <td><span class="badge b-gr">${f.type}</span></td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--t2)">${f.detail||'-'}</td>
+      <td style="font-weight:600;white-space:nowrap">${(f.amount||0).toLocaleString()}원</td>
+      <td style="font-size:11px;color:var(--t2)">${f.company||'-'}</td>
+      <td style="font-size:11px;white-space:nowrap">${f.approvalLine||'-'}</td>
+      <td>
+        <select class="status-sel s-${f.status||'검토중'}" onchange="updateFacStatus('${f.id}',this.value);this.className='status-sel s-'+this.value">
+          <option value="검토중" ${(f.status||'검토중')==='검토중'?'selected':''}>검토중</option>
+          <option value="검토완료" ${f.status==='검토완료'?'selected':''}>검토완료</option>
+          <option value="보류" ${f.status==='보류'?'selected':''}>보류</option>
+        </select>
+      </td>
+      <td><button class="adm-del" onclick="deleteFacRecord('${f.id}')" title="삭제">🗑</button></td>
+    </tr>`).join('');
+}
+
+function updateFacStatus(id, status){
+  const fac=loadFac();
+  const f=fac.find(x=>x.id===id);
+  if(f){ f.status=status; saveFac(fac); }
+}
+
+function deleteFacRecord(id){
+  if(!confirm('이 항목을 삭제할까요?')) return;
+  saveFac(loadFac().filter(f=>f.id!==id));
+  renderFacAdmin();
+  refreshAdmin();
+  toast('삭제되었습니다');
+}
+
+function clearFacFilter(){
+  ['fac-srch','fac-f-status','fac-f-type'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderFacAdmin();
+}
+
+function renderQAAdmin(){
+  const qa=loadQA();
+  const srch=(document.getElementById('qa-srch')?.value||'').toLowerCase();
+  const fCat=document.getElementById('qa-f-cat')?.value||'';
+  const filtered=[...qa].reverse().filter(q=>{
+    if(fCat && q.cat!==fCat) return false;
+    if(srch && !q.q.toLowerCase().includes(srch)) return false;
+    return true;
+  });
+  const cntEl=document.getElementById('qa-adm-count');
+  if(cntEl) cntEl.textContent=`총 ${filtered.length}건 / 전체 ${qa.length}건`;
+  const tbody=document.getElementById('qa-adm-tbody');
+  if(!filtered.length){ tbody.innerHTML=`<tr><td colspan="6" class="adm-empty">데이터가 없습니다</td></tr>`; return; }
+  tbody.innerHTML=filtered.map((q,i)=>`
+    <tr>
+      <td style="color:var(--t2)">${filtered.length-i}</td>
+      <td><span class="badge b-gr">${q.cat}</span></td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.q}</td>
+      <td style="text-align:center">${q.cnt||1}</td>
+      <td style="color:var(--t2);font-size:11px;white-space:nowrap">${q.ts?new Date(q.ts).toLocaleDateString('ko-KR'):'-'}</td>
+      <td><button class="adm-del" onclick="deleteQARecord('${q.id}')" title="삭제">🗑</button></td>
+    </tr>`).join('');
+}
+
+function deleteQARecord(id){
+  if(!confirm('이 항목을 삭제할까요?')) return;
+  saveQA(loadQA().filter(q=>q.id!==id));
+  renderQAAdmin();
+  toast('삭제되었습니다');
+}
+
+function clearAllQA(){
+  if(!confirm('모든 문의 내역을 삭제할까요?\n되돌릴 수 없습니다.')) return;
+  saveQA([]);
+  renderQAAdmin();
+  toast('전체 삭제되었습니다');
+}
+
+function exportFacCSV(){
+  const fac=loadFac();
+  if(!fac.length){ toast('내보낼 데이터가 없습니다'); return; }
+  const hdr=['번호','일자','조직','요청자','유형','내용','금액(원)','공사업체','결재라인','상태'];
+  const rows=fac.map((f,i)=>[
+    i+1, f.date||'', f.region||'', f.requester||'', f.type||'',
+    `"${(f.detail||'').replace(/"/g,'""')}"`,
+    f.amount||0, f.company||'', f.approvalLine||'', f.status||''
+  ]);
+  const csv='﻿'+[hdr,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='시설보수요청_'+new Date().toLocaleDateString('ko-KR').replace(/\.\s*/g,'-').replace(/-$/,'')+'.csv';
+  a.click();
+  toast('CSV 파일 다운로드를 시작합니다');
 }
 
 // ═══════════════════════════════════
