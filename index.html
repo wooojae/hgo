@@ -1893,18 +1893,21 @@ function loadFloorPlan(input){
   toast('도면이 로드되었습니다');
 }
 
-// ── 도면 리사이즈 ──
+// ── 도면 리사이즈 (비율 고정) ──
 let floorResizeState = null;
 function startFloorResize(e){
   e.preventDefault();
   e.stopPropagation();
   const inner = document.getElementById('canvas-inner');
   const touch = e.touches ? e.touches[0] : e;
+  const w = inner.offsetWidth;
+  const h = inner.offsetHeight;
   floorResizeState = {
     startX: touch.clientX,
     startY: touch.clientY,
-    startW: inner.offsetWidth,
-    startH: inner.offsetHeight,
+    startW: w,
+    startH: h,
+    aspect: w / h,
   };
   document.addEventListener('mousemove', onFloorResizeMove);
   document.addEventListener('mouseup',   onFloorResizeEnd);
@@ -1916,14 +1919,14 @@ function onFloorResizeMove(e){
   if(e.cancelable) e.preventDefault();
   const touch = e.touches ? e.touches[0] : e;
   const dx = touch.clientX - floorResizeState.startX;
-  const dy = touch.clientY - floorResizeState.startY;
+  // 가로 변화량 기준으로 비율 고정
   const newW = Math.max(200, floorResizeState.startW + dx);
-  const newH = Math.max(150, floorResizeState.startH + dy);
+  const newH = Math.round(newW / floorResizeState.aspect);
   const inner = document.getElementById('canvas-inner');
   inner.style.width  = newW + 'px';
-  inner.style.height = newH + 'px';
+  inner.style.height = Math.max(150, newH) + 'px';
   const badge = document.getElementById('floor-size-badge');
-  if(badge) badge.textContent = `${Math.round(newW)} × ${Math.round(newH)}`;
+  if(badge) badge.textContent = `${Math.round(newW)} × ${Math.max(150, newH)}`;
 }
 function onFloorResizeEnd(){
   if(!floorResizeState) return;
