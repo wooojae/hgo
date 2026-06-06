@@ -211,9 +211,6 @@ tbody tr:hover td{background:#FAFAFA}
 .canvas-area.placing{cursor:copy}
 .canvas-inner{position:relative;min-width:100%;min-height:400px}
 #floor-bg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:fill;pointer-events:none}
-#floor-resize-handle{position:absolute;bottom:0;right:0;width:22px;height:22px;cursor:se-resize;z-index:30;display:none;background:linear-gradient(135deg,transparent 45%,var(--p) 45%);border-radius:0 0 4px 0}
-#floor-resize-handle::after{content:'';position:absolute;bottom:3px;right:3px;width:8px;height:8px;border-right:2px solid rgba(255,255,255,.8);border-bottom:2px solid rgba(255,255,255,.8)}
-#floor-size-badge{position:absolute;top:6px;right:6px;background:rgba(26,26,46,.7);color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;pointer-events:none;z-index:20;display:none;letter-spacing:.02em}
 .placed-item{position:absolute;border-radius:4px;cursor:grab;display:flex;align-items:center;justify-content:center;user-select:none;transition:box-shadow .15s;z-index:5;overflow:visible;background:transparent}
 .placed-item:active{cursor:grabbing}
 .placed-item.selected{box-shadow:0 0 0 2px var(--p),0 2px 10px rgba(240,90,40,.25);z-index:10}
@@ -689,16 +686,21 @@ tbody tr:hover td{background:#FAFAFA}
         <!-- 캔버스 + AI 검토 -->
         <div class="ed-right">
           <div class="ed-canvas-card">
-            <div class="ed-canvas-h">
+            <div class="ed-canvas-h" style="flex-direction:column;align-items:stretch;gap:8px">
               <span style="font-size:12px;color:var(--t2)">집기 선택 후 도면 클릭 → 배치 · 드래그 → 이동 · 우하단 핸들 → 크기조절 · 선택 후 회전/삭제</span>
+              <div id="floor-scale-bar" style="display:none;align-items:center;gap:10px;flex-wrap:nowrap">
+                <span style="font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;flex-shrink:0">🗺 도면 크기</span>
+                <input type="range" id="floor-scale-slider" min="30" max="200" value="100"
+                  style="flex:1;accent-color:var(--p);cursor:pointer"
+                  oninput="onFloorScaleSlider(this.value)">
+                <span id="floor-scale-pct" style="font-size:11px;font-weight:600;color:var(--p);min-width:38px;text-align:right;flex-shrink:0">100%</span>
+              </div>
             </div>
             <div class="canvas-area" id="canvas-area" onclick="onCanvasClick(event)" onmousedown="onCanvasMouseDown(event)" onmousemove="onCanvasMouseMove(event)" onmouseleave="hideEraseCursor()">
               <div class="canvas-inner" id="canvas-inner">
                 <img id="floor-bg" style="display:none">
                 <canvas id="erase-canvas" style="position:absolute;top:0;left:0;pointer-events:none;z-index:3;display:block"></canvas>
                 <div id="canvas-items"></div>
-                <div id="floor-size-badge"></div>
-                <div id="floor-resize-handle" onmousedown="startFloorResize(event)" ontouchstart="startFloorResize(event)"></div>
               </div>
               <div class="upload-hint" id="canvas-hint">
                 <div style="font-size:40px">🏢</div>
@@ -1873,20 +1875,20 @@ function loadFloorPlan(input){
     const area = document.getElementById('canvas-area');
     const inner = document.getElementById('canvas-inner');
     const areaW = area.clientWidth || 800;
-    // 원본 비율 저장
     floorNaturalAspect = this.naturalWidth / this.naturalHeight;
-    const finalW = areaW;
-    const finalH = Math.round(finalW / floorNaturalAspect);
-    inner.style.width  = finalW + 'px';
-    inner.style.height = Math.max(finalH, 150) + 'px';
-    const badge = document.getElementById('floor-size-badge');
-    if(badge) badge.textContent = `${finalW} × ${Math.max(finalH, 150)}`;
+    floorBaseW = areaW;
+    const finalH = Math.max(Math.round(areaW / floorNaturalAspect), 150);
+    inner.style.width  = areaW + 'px';
+    inner.style.height = finalH + 'px';
+    // 슬라이더 100% 초기화
+    const slider = document.getElementById('floor-scale-slider');
+    if(slider) slider.value = 100;
+    document.getElementById('floor-scale-pct').textContent = '100%';
+    document.getElementById('floor-scale-bar').style.display = 'flex';
   };
   img.src = url;
   img.style.display = 'block';
   document.getElementById('canvas-hint').style.display = 'none';
-  document.getElementById('floor-resize-handle').style.display = 'block';
-  document.getElementById('floor-size-badge').style.display = 'block';
   // 기존 배치 집기 + 지우개 초기화
   placements = []; selectedId = null;
   document.getElementById('canvas-items').innerHTML = '';
@@ -1897,46 +1899,18 @@ function loadFloorPlan(input){
   toast('도면이 로드되었습니다');
 }
 
-// ── 도면 리사이즈 (원본 비율 고정) ──
-let floorResizeState = null;
-function startFloorResize(e){
-  e.preventDefault();
-  e.stopPropagation();
-  const inner = document.getElementById('canvas-inner');
-  const touch = e.touches ? e.touches[0] : e;
-  floorResizeState = {
-    startX: touch.clientX,
-    startW: inner.offsetWidth,
-    aspect: floorNaturalAspect, // 원본 이미지 비율 사용
-  };
-  document.addEventListener('mousemove', onFloorResizeMove);
-  document.addEventListener('mouseup',   onFloorResizeEnd);
-  document.addEventListener('touchmove', onFloorResizeMove, {passive:false});
-  document.addEventListener('touchend',  onFloorResizeEnd);
-}
-function onFloorResizeMove(e){
-  if(!floorResizeState) return;
-  if(e.cancelable) e.preventDefault();
-  const touch = e.touches ? e.touches[0] : e;
-  const dx = touch.clientX - floorResizeState.startX;
-  const newW = Math.max(200, floorResizeState.startW + dx);
-  const newH = Math.max(150, Math.round(newW / floorResizeState.aspect));
+// ── 도면 크기 슬라이더 (원본 비율 고정) ──
+let floorBaseW = 800; // 도면 업로드 시 초기 너비 저장
+
+function onFloorScaleSlider(val){
+  const pct = parseInt(val);
+  const newW = Math.round(floorBaseW * pct / 100);
+  const newH = Math.max(150, Math.round(newW / floorNaturalAspect));
   const inner = document.getElementById('canvas-inner');
   inner.style.width  = newW + 'px';
   inner.style.height = newH + 'px';
-  const badge = document.getElementById('floor-size-badge');
-  if(badge) badge.textContent = `${Math.round(newW)} × ${newH}`;
-}
-function onFloorResizeEnd(){
-  if(!floorResizeState) return;
-  floorResizeState = null;
-  document.removeEventListener('mousemove', onFloorResizeMove);
-  document.removeEventListener('mouseup',   onFloorResizeEnd);
-  document.removeEventListener('touchmove', onFloorResizeMove);
-  document.removeEventListener('touchend',  onFloorResizeEnd);
+  document.getElementById('floor-scale-pct').textContent = pct + '%';
   clearEraseCanvas();
-  saveSnapshot();
-  toast('도면 크기가 조정되었습니다');
 }
 
 function onCanvasClick(e){
@@ -2286,8 +2260,10 @@ function clearLayout(){
   document.getElementById('canvas-items').innerHTML='';
   const img=document.getElementById('floor-bg');
   img.src=''; img.style.display='none';
-  document.getElementById('floor-resize-handle').style.display='none';
-  document.getElementById('floor-size-badge').style.display='none';
+  document.getElementById('floor-scale-bar').style.display='none';
+  const slider=document.getElementById('floor-scale-slider');
+  if(slider) slider.value=100;
+  document.getElementById('floor-scale-pct').textContent='100%';
   document.getElementById('canvas-hint').style.display='';
   const inner=document.getElementById('canvas-inner');
   inner.style.width=''; inner.style.height='';
