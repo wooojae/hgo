@@ -73,12 +73,8 @@ input,select,textarea{font-family:inherit}
 .h-sep{width:1px;height:20px;background:var(--bdr)}
 .h-bc{flex:1;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t2);min-width:0}
 .h-bc .cur{color:var(--t1);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.h-search{display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:6px 12px;width:200px;flex-shrink:0}
-.h-search input{border:none;background:none;outline:none;font-size:12px;color:var(--t1);width:100%}
-.h-search input::placeholder{color:var(--t3)}
 .h-btn{width:34px;height:34px;border:none;background:none;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t2);position:relative;transition:background .15s;flex-shrink:0}
 .h-btn:hover{background:var(--bg)}
-.ndot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--p);border-radius:50%;border:2px solid #fff}
 
 /* ── CONTENT ── */
 .content{flex:1;padding:22px;overflow-y:auto}
@@ -296,7 +292,6 @@ tbody tr:hover td{background:#FAFAFA}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
   .h-menu-btn{display:flex}
-  .h-search{display:none}
   .chat-wrap{grid-template-columns:1fr;height:auto}
   .chat-right{display:none}
   .chat-main{height:calc(100vh - 160px);display:flex;flex-direction:column}
@@ -428,14 +423,6 @@ tbody tr:hover td{background:#FAFAFA}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="cur" id="bread-cur">총무 AI</span>
     </div>
-    <div class="h-search">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input placeholder="검색...">
-    </div>
-    <button class="h-btn">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <span class="ndot"></span>
-    </button>
     <button class="h-btn" onclick="openLoginModal()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     </button>
